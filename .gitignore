@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# 本机凭证与本机配置：绝不入库
+auth.json
+credentials.json
+credentials*.json
+config.json
+.env
+.env.*
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+
+# 本机调试产物
+*.log
