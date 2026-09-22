@@ -84,13 +84,19 @@ def _run(instance: SingleInstance, argv: list[str]) -> int:
         panel.setVisible(visible)
         tray.set_panel_visible(visible)
 
-    def on_autostart(enabled: bool) -> None:
+    def apply_autostart(enabled: bool) -> None:
+        """把自启状态落到系统里。
+
+        托盘菜单和设置窗口是同一份状态的两个入口，所以写完（或写失败）都要回读一次
+        注册表，免得其中一处的勾选跟系统不一致。
+        """
         try:
             autostart.set_enabled(enabled)
         except Exception as exc:  # noqa: BLE001
             tray.sync_autostart()
             tray.show_message("开机自启设置失败", str(exc))
             return
+        tray.sync_autostart()
         tray.show_message(
             "开机自启",
             "已开启，下次登录自动启动。" if enabled else "已关闭。",
@@ -119,13 +125,20 @@ def _run(instance: SingleInstance, argv: list[str]) -> int:
             config.save(cfg)
         except OSError as exc:  # noqa: BLE001 - 存不下也要继续用
             tray.show_message("设置没能保存", str(exc))
+
+        # 只有真变了才动注册表：没碰这个勾的时候，不该顺手把自启命令重写一遍
+        # （同一台机器上源码形态和 exe 形态写出来的命令并不一样）
+        chosen_autostart = dialog.result_autostart()
+        if chosen_autostart != autostart.is_enabled():
+            apply_autostart(chosen_autostart)
+
         rebuild()
 
     tray.refresh_requested.connect(poller.refresh_now)
     tray.toggle_requested.connect(on_toggle)
     tray.move_requested.connect(panel.move_to_cursor_screen)
     tray.settings_requested.connect(on_settings)
-    tray.autostart_toggled.connect(on_autostart)
+    tray.autostart_toggled.connect(apply_autostart)
     tray.quit_requested.connect(on_quit)
     panel.settings_requested.connect(on_settings)
 

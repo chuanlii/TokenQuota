@@ -1,7 +1,11 @@
-"""设置窗口：显示哪些服务、什么条件下变什么颜色。
+"""设置窗口：显示哪些服务、什么条件下变什么颜色、要不要开机自启。
 
 改完点「保存」才落盘；面板会立刻按新设置重画（见 ``main.py``）。
 默认值就在这一屏上摆着，用户随时能「恢复默认」。
+
+开机自启是这一屏里唯一不写进配置文件的一项：它直接读写真机上的自启项
+（``autostart``）。注册表才是这份状态的唯一事实，否则会出现「设置说开着、
+系统里其实没有」这种互相矛盾的状态。
 """
 
 from __future__ import annotations
@@ -22,7 +26,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from . import spec
+from . import autostart, spec
 from .assets import SERVICES
 from .config import Config
 
@@ -63,7 +67,7 @@ def _pct_spin(value: float) -> QSpinBox:
 
 
 class SettingsDialog(QDialog):
-    """服务开关 + 变色条件 + 三档配色。"""
+    """服务开关 + 变色条件 + 三档配色 + 开机自启。"""
 
     def __init__(self, config: Config, parent=None) -> None:
         super().__init__(parent)
@@ -82,6 +86,8 @@ class SettingsDialog(QDialog):
         hint.setWordWrap(True)
         hint.setStyleSheet(_MUTED_STYLE)
         root.addWidget(hint)
+
+        root.addWidget(self._build_autostart())
 
         buttons = QDialogButtonBox()
         self._reset_btn = QPushButton("恢复默认")
@@ -158,12 +164,31 @@ class SettingsDialog(QDialog):
         self._pace_spin.setEnabled(rule.pace_enabled)
         return box
 
+    def _build_autostart(self) -> QGroupBox:
+        box = QGroupBox("启动")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(4)
+
+        self._autostart_check = QCheckBox("开机自启")
+        # 勾选状态当场读系统里真实的自启项，不从配置文件里翻：
+        # 全新环境（注册表里没有这一项）自然就是不勾选。
+        self._autostart_check.setChecked(autostart.is_enabled())
+        layout.addWidget(self._autostart_check)
+
+        tip = QLabel("登录 Windows 后自动启动面板，不需要管理员权限。取消勾选会移除自启项。")
+        tip.setWordWrap(True)
+        tip.setStyleSheet(_MUTED_STYLE)
+        layout.addWidget(tip)
+        return box
+
     # ------------------------------------------------------------------ 行为
 
     def _restore_defaults(self) -> None:
         defaults = Config.default()
         for service in SERVICES:
             self._checks[service.id].setChecked(bool(defaults.enabled.get(service.id, True)))
+        # 开机自启的默认值就是不启：恢复默认等于把这一项也取消勾选
+        self._autostart_check.setChecked(False)
         self._apply(defaults)
 
     def _apply(self, config: Config) -> None:
@@ -196,6 +221,10 @@ class SettingsDialog(QDialog):
                 "danger": self._danger_combo.currentData(),
             },
         )
+
+    def result_autostart(self) -> bool:
+        """这一屏里选的开机自启状态。是否真的要改，由调用方和现状比对后决定。"""
+        return self._autostart_check.isChecked()
 
     def accept(self) -> None:  # noqa: D102 - Qt 命名
         if not any(check.isChecked() for check in self._checks.values()):

@@ -17,7 +17,12 @@ from . import autostart
 BAR_COLORS = ("#10a37f", "#6c7bff")
 
 
-def _pixmap(side: int) -> QPixmap:
+def icon_pixmap(side: int) -> QPixmap:
+    """画一个 ``side × side`` 的图标：两条订阅主色竖条。
+
+    公开出来是为了让打包脚本（``packaging/make_icon.py``）能生成同一份
+    exe 图标，不必把画法抄第二遍。
+    """
     pixmap = QPixmap(side, side)
     pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
@@ -43,7 +48,7 @@ def _pixmap(side: int) -> QPixmap:
 def make_icon() -> QIcon:
     icon = QIcon()
     for side in (16, 20, 24, 32, 48, 64):
-        icon.addPixmap(_pixmap(side))
+        icon.addPixmap(icon_pixmap(side))
     return icon
 
 

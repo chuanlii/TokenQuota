@@ -1,0 +1,36 @@
+# exe 文件属性（右键「属性 → 详细信息」里看到的内容）。
+#
+# 版本号要和 app/__init__.py 里的 VERSION 一致；build.ps1 会在打包前校验，
+# 不一致会直接报错，免得打出来的 exe 版本号和代码对不上。
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(0, 1, 0, 0),
+    prodvers=(0, 1, 0, 0),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo(
+      [
+        StringTable(
+          '080404B0',
+          [
+            StringStruct('CompanyName', 'chuanlii'),
+            StringStruct('FileDescription', 'AI 订阅额度'),
+            StringStruct('FileVersion', '0.1.0'),
+            StringStruct('InternalName', 'TokenQuota'),
+            StringStruct('LegalCopyright', 'Copyright (c) 2026 chuanlii'),
+            StringStruct('OriginalFilename', 'TokenQuota.exe'),
+            StringStruct('ProductName', 'TokenQuota'),
+            StringStruct('ProductVersion', '0.1.0')
+          ]
+        )
+      ]
+    ),
+    VarFileInfo([VarStruct('Translation', [0x0804, 1200])])
+  ]
+)
